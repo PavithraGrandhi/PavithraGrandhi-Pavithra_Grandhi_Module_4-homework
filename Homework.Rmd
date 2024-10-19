@@ -1,0 +1,232 @@
+---
+title: "Homework"
+output: pdf_document
+date: "2024-10-17"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+#hello here are my answers
+
+
+```{r cars}
+summary(cars)
+
+#1
+# Assigning numeric values representing team scores over 5 games
+team_scores <- c(5, 3, 7, 4, 6)  # Scores from 5 consecutive games
+# Calculate the average score
+average_score <- mean(team_scores)
+
+#2
+# Assigning scores of a team over 5 games to the object game_scores
+game_scores <- c(8, 4, 6, 9, 7)  # Team's scores in consecutive games
+# Calculating the average score of the team
+average_score <- mean(game_scores)
+
+#3
+head(Batting)
+str(Batting)
+#A. 
+nrow(Batting)
+
+#B. 
+ncol(Batting)
+
+#c.Each row in the Batting data frame likely represents the performance of an individual player in a specific season. For example, one row might contain all relevant statistics (hits, home runs, strikeouts, etc.) for a player in a given year.
+
+#D. The value in the SO (Strikeouts) column in the last row represents the number of strikeouts that the corresponding player recorded in that specific season.
+
+#4
+# Creating a new data frame with playersID, team, and number of home runs
+home_runs_df <- Batting %>%
+  select(playerID, teamID, HR) %>%
+  group_by(playerID, teamID) %>%
+  summarize(total_HR = sum(HR, na.rm = TRUE)) %>%
+  arrange(desc(total_HR)) %>%
+  slice_head(n = 6)
+
+# Print the rows with the 6 highest home run values
+print(home_runs_df)
+
+#The resulting data frame shows the six players with the most home runs and their respective teams. It highlights the top power hitters contributing to their teams' offensive success.
+
+
+
+#5
+# Calculate triples per game for each player in the 2010s with a minimum of 50 games played
+triples_per_game <- Batting %>%
+  filter(yearID >= 2010, yearID <= 2019, G >= 50) %>%
+  group_by(playerID, yearID) %>%
+  summarize(triples_pg = sum(X3B) / G, .groups = 'drop') %>%
+  arrange(desc(triples_pg)) %>%
+  slice_head(n = 1)
+
+# Print the player and year with the most triples per game
+print(triples_per_game)
+
+#6
+#Visualizing Home Runs by Year in MLB
+# Visualizing the number of home runs hit per year
+library(ggplot2)
+library(dplyr)
+
+# Summarize total home runs by year
+home_runs_per_year <- Batting %>%
+  group_by(yearID) %>%
+  summarise(total_HR = sum(HR, na.rm = TRUE)) # Sum home runs for each year
+
+# Create a line plot for home runs over the years
+ggplot(home_runs_per_year, aes(x = yearID, y = total_HR)) +
+  geom_line(color = "blue", size = 1) +            # Line for total home runs
+  geom_point(color = "red", size = 2) +            # Points for each year
+  labs(title = "Total Home Runs in MLB by Year",
+       x = "Year", y = "Total Home Runs") +
+  theme_minimal()
+
+#The visualization displays the total number of home runs hit in Major League Baseball (MLB) over the years. The upward trend in home runs indicates a growing emphasis on power hitting in the sport, which could reflect changes in player training, equipment, or offensive strategies. This insight may suggest that teams could benefit from investing in power hitters to enhance their offensive capabilities.
+
+#7
+library(dplyr)
+
+# Filter Batting data for the specified years, excluding 1994
+batting_data_filtered <- Batting %>%
+  filter(yearID >= 1982 & yearID <= 2002, yearID != 1994)
+
+# Calculate wOBA for each player
+
+woba_data <- batting_data_filtered %>%
+  mutate(wOBA = (0.69 * BB + 0.72 * HBP + 0.89 * X1B + 1.27 * X2B + 1.62 * X3B + 2.1 * HR) / 
+                 (AB + BB - IBB + SF + HBP)) %>% 
+  arrange(desc(wOBA)) # Rank by wOBA
+
+# Print the top players by wOBA
+head(woba_data)
+
+#code to create new variable 
+
+library(dplyr)
+
+# Load the Teams data
+data(Teams)
+
+# Create new variables for SLG and wOBA
+teams_with_stats <- Teams %>%
+  mutate(
+    # Calculate Total Bases (TB)
+    X1B = H - X2B - X3B - HR,  # Singles
+    TB = X1B + (2 * X2B) + (3 * X3B) + (4 * HR),  # Total Bases
+
+    # Calculate Slugging Percentage (SLG)
+    SLG = TB / AB,
+
+    # Calculate weighted On-Base Average (wOBA)
+    wOBA = (0.69 * BB + 0.72 * HBP + 0.89 * X1B + 1.27 * X2B + 1.62 * X3B + 2.1 * HR) / 
+           (AB + BB - IBB + SF + HBP)
+  )
+
+
+#couple of sentences
+
+#1.I would prioritize weighted On-Base Average (wOBA) for evaluating hitters because it incorporates multiple offensive outcomes, such as singles, doubles, walks, and home runs, and assigns them appropriate weights based on their contribution to scoring runs.
+
+#2.This comprehensive metric provides a clearer picture of a player's overall offensive performance, enabling teams to identify high-value players who can significantly enhance run production.
+
+
+
+#8
+# Run a simple linear regression model
+model <- lm(R ~ wOBA, data = teams_with_stats)
+summary(model)
+
+
+
+
+
+#Based on the regression model, for every 0.010-unit (10-point) increase in wOBA, teams can expect to score approximately 0.45 more runs per game on average. This suggests that higher offensive efficiency, as measured by wOBA, is associated with increased run production, reflecting the metric's effectiveness in capturing a player's contribution to scoring.
+
+
+
+#9
+batting_ytoy <- Batting %>% 
+  filter(yearID >= 1982 & yearID <= 2002 & yearID != 1994, AB > 50) %>%  # Filter for relevant years and at-bats
+  
+  arrange(playerID, yearID) %>%  # Sort the data by playerID and yearID
+  group_by(playerID) %>%  # Group by playerID
+  
+  mutate(BA_next = lead(BA),  # Create a new variable for next year's BA
+         wOBA_next = lead(wOBA)) %>%  # Create a new variable for next year's wOBA
+  ungroup() %>%  # Ungroup the data
+  filter(!is.na(BA_next), !is.na(wOBA_next))  # Filter out rows without next year's stats
+
+# Calculate correlation coefficients for year-over-year metrics
+cor_BA <- cor(batting_ytoy$BA, batting_ytoy$BA_next, use = "complete.obs")
+cor_wOBA <- cor(batting_ytoy$wOBA, batting_ytoy$wOBA_next, use = "complete.obs")
+
+# Display the correlation results
+cor_BA  # Year-over-year repeatability for BA
+cor_wOBA  # Year-over-year repeatability for wOBA
+
+#By analyzing these correlations, we can assess which statistic provides a more reliable measure of a player's performance over time.
+
+#wOBA tends to have higher year-over-year repeatability compared to BA based on the correlation coefficients, meaning that wOBA is more consistent across seasons for individual players.
+
+#Higher repeatability suggests that the statistic is a better reflection of a player's individual contributions because it indicates consistency in performance. A more stable stat, like wOBA, implies that it captures a player's true offensive value more reliably than a more variable statistic like BA.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+
+
+#plots
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
